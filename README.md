@@ -1,4 +1,4 @@
-# eptsreports-testing-scripts
+# EPTS Reports - Testing scripts and ETL jobs
 EPTS reports testing scripts / ETL jobs
 
 ## Getting Started
