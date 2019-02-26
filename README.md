@@ -20,3 +20,5 @@ the EPTS team uses for testing indicator reports.
 * Click `Run` (with a play icon);
 * Disable `Gather performance statistics` option to make the execution faster;
 * Click `Run`;
+* Once the execution of the transformation completes the resulting file will be stored under `patient-summaries`
+  on your home directory;
