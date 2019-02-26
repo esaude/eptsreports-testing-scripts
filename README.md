@@ -1,5 +1,5 @@
 # eptsreports-testing-scripts
-EPTS reports testing scripts 
+EPTS reports testing scripts / ETL jobs
 
 ## Getting Started
 This instructions will help you run the Pentaho Data Integration transformations that generate the patient summaries that
