@@ -11,7 +11,7 @@ the EPTS team uses for testing indicator reports.
 * Download MySQL connector version 5;
 
 ## Instalation, configuration and execution
-* Extract the download file on a directory of you choice `${pdi-install-dir}`;
+* Extract the downloaded file on a directory of you choice `${pdi-install-dir}`;
 * Copy MySQL connector jar file to `${pdi-install-dir}/data-integration/lib`;
 * Open terminal on directory `${pdi-install-dir}/data-integration` and execute `./spoon.sh`;
 * Click open (Ctrl+O) and open one of the transformations on this repository;
