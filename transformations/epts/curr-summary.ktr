@@ -919,10 +919,10 @@ where obs.person_id = ?
     <append>N</append>
     <add_to_result_filenames>N</add_to_result_filenames>
     <file>
-      <name>/home/edrisse/Desktop/curr-patient-summary</name>
+      <name>${user.home}/patient-summaries/curr-patient-summary</name>
       <extention>xls</extention>
       <do_not_open_newfile_init>N</do_not_open_newfile_init>
-      <create_parent_folder>N</create_parent_folder>
+      <create_parent_folder>Y</create_parent_folder>
       <split>N</split>
       <add_date>N</add_date>
       <add_time>N</add_time>
@@ -938,7 +938,7 @@ where obs.person_id = ?
       <tempdirectory/>
     </file>
     <template>
-      <enabled>Y</enabled>
+      <enabled>N</enabled>
       <append>N</append>
       <filename>/home/edrisse/transformations/epts/explain-report-template.xls</filename>
     </template>

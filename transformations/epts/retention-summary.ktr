@@ -1478,7 +1478,7 @@ WHERE pg.voided=0 AND ps.voided=0 AND p.voided=0 AND pg.patient_id=? and  pg.pro
     <append>N</append>
     <add_to_result_filenames>N</add_to_result_filenames>
     <file>
-      <name>/home/edrisse/Desktop/retention-patient-summary</name>
+      <name>${user.home}/patient-summaries/retention-patient-summary</name>
       <extention>xls</extention>
       <do_not_open_newfile_init>N</do_not_open_newfile_init>
       <create_parent_folder>N</create_parent_folder>

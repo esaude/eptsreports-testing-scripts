@@ -902,7 +902,7 @@ order by encounter.encounter_datetime desc
     <append>N</append>
     <add_to_result_filenames>N</add_to_result_filenames>
     <file>
-      <name>/home/edrisse/Desktop/pvls-patient-summary</name>
+      <name>${user.home}/patient-summaries/pvls-patient-summary</name>
       <extention>xls</extention>
       <do_not_open_newfile_init>N</do_not_open_newfile_init>
       <create_parent_folder>N</create_parent_folder>
