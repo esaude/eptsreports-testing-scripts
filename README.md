@@ -8,6 +8,7 @@ the EPTS team uses for testing indicator reports.
 ## Prerequisites
 * Download and install Pentaho Data Integration (PDI) version 8 (follow PDI instalaction procedure, requires JAVA). 
   This steps were validated on version 8.2.0;
+* Pentaho DI Community edition can be found [here](https://community.hitachivantara.com/docs/DOC-1009931-downloads).
 * Download MySQL connector version 5;
 
 ## Instalation, configuration and execution
