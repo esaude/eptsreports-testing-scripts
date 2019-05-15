@@ -437,13 +437,13 @@
   </notepads>
   <connection>
     <name>Openmrs Merge DB</name>
-    <server>localhost</server>
+    <server>${ETL_DATABASE_HOST}</server>
     <type>MYSQL</type>
     <access>Native</access>
     <database>merge_db</database>
-    <port>3306</port>
-    <username>etl</username>
-    <password>Encrypted 2be98afc86aa7f2e48a1da379d0c3fd89</password>
+    <port>${ETL_DATABASE_PORT}</port>
+    <username>${ETL_DATABASE_USER}</username>
+    <password>${ETL_DATABASE_PASSWORD}</password>
     <servername/>
     <data_tablespace/>
     <index_tablespace/>
@@ -462,7 +462,7 @@
       </attribute>
       <attribute>
         <code>PORT_NUMBER</code>
-        <attribute>3306</attribute>
+        <attribute>${ETL_DATABASE_PORT}</attribute>
       </attribute>
       <attribute>
         <code>PRESERVE_RESERVED_WORD_CASE</code>
@@ -492,13 +492,13 @@
   </connection>
   <connection>
     <name>Openmrs Source</name>
-    <server>localhost</server>
+    <server>${ETL_DATABASE_HOST}</server>
     <type>MYSQL</type>
     <access>Native</access>
     <database>${ETL_SOURCE_DATABASE}</database>
-    <port>3306</port>
-    <username>etl</username>
-    <password>Encrypted 2be98afc86aa7f2e48a1da379d0c3fd89</password>
+    <port>${ETL_DATABASE_PORT}</port>
+    <username>${ETL_DATABASE_USER}</username>
+    <password>${ETL_DATABASE_PASSWORD}</password>
     <servername/>
     <data_tablespace/>
     <index_tablespace/>
@@ -517,7 +517,7 @@
       </attribute>
       <attribute>
         <code>PORT_NUMBER</code>
-        <attribute>3306</attribute>
+        <attribute>${ETL_DATABASE_PORT}</attribute>
       </attribute>
       <attribute>
         <code>PRESERVE_RESERVED_WORD_CASE</code>
