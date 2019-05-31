@@ -6,11 +6,13 @@ MYSQL_CMD=$1
 MYSQL_USER=$2
 MYSQL_OPTS=$3
 MYSQL_DB=$4
-form_concept_grouping_file="data/form_concept_grouping.txt"
-form_concept_questions_file="data/form_concept_questions.txt"
-form_concept_answers_file="data/form_concept_answers.txt"
-form_programs_file="data/form_programs.txt"
-form_expressions_file="data/form_expressions.txt"
+form_concept_grouping_file="$PWD/data/form_concept_grouping.txt"
+form_concept_questions_file="$PWD/data/form_concept_questions.txt"
+form_concept_answers_file="$PWD/data/form_concept_answers.txt"
+form_programs_file="$PWD/data/form_programs.txt"
+form_expressions_file="$PWD/data/form_expressions.txt"
+form_locations_file="$PWD/data/form_locations.txt"
+form_roles_file="$PWD/data/form_roles.txt"
 form_concept_used_csv="$PWD/usage/form_used_concepts.csv"
 form_concept_not_used_csv="$PWD/usage/form_not_used_concepts.csv"
 form_programs_used_csv="$PWD/usage/form_used_programs.csv"
@@ -19,6 +21,8 @@ form_identifiers_used_csv="$PWD/usage/form_used_identifiers.csv"
 form_identifiers_not_used_csv="$PWD/usage/form_not_used_identifiers.csv"
 form_person_attributes_used_csv="$PWD/usage/form_used_person_attributes.csv"
 form_person_attributes_not_used_csv="$PWD/usage/form_not_used_person_attributes.csv"
+form_used_roles_csv="$PWD/usage/form_used_roles.csv"
+form_not_used_roles_csv="$PWD/usage/form_not_used_roles.csv"
 
 
 ## require mysql command or location, user and database
@@ -49,14 +53,14 @@ do
   ## clean up the xml data file and save each form named after its form uuid
   xmlData=$(printf "$xmlData")
   ## save xmlData onto a respective form specific file replacing back %
-  echo "${xmlData//PCNT/%}" > "data/form_$uuid.xml"
+  echo "${xmlData//PCNT/%}" > "$PWD/data/form_$uuid.xml"
 done
 printf "\nFinished extracting forms from the database\n"
 
 
 ## extracting concepts from forms
 printf "\nStarting to extract metadata from forms\n"
-for form_file in data/form_*.xml
+for form_file in $PWD/data/form_*.xml
 do
   ## simulate loading or progress bar
   echo -n "."
@@ -70,24 +74,31 @@ do
   echo -n 'cat //*/@programId' | xmllint --shell $form_file | awk -F\" 'NR % 2 == 0 { print $2 }' >> $form_programs_file
   ## extract expressions
   echo -n 'cat //*/@expression' | xmllint --shell $form_file | awk -F\" 'NR % 2 == 0 { print $2 }' >> $form_expressions_file
+  
+  ## extract roles
+  echo -n 'cat //*/@role' | xmllint --shell $form_file | awk -F\" 'NR % 2 == 0 { print $2 }' >> $form_roles_file
 done
 printf "\nFinished extracting metadata from forms\n"
 
 
-## first argument; file, second argument; separator
+## print separator horizontal line
+printf '\n%s\n' _________________________________________________________________________________
+
+
+## first argument; file, second argument; separator, third argument; wrapper
 combineAllLinesFromFileIntoOneWithSeparator () {
   lines=""
   while IFS= read -r line
   do
     if [ "$line" != "" ]; then
-      lines="$lines$2$line"
+      lines="$lines$2$3$line$3"
     fi
   done < "$1"
   ## echo or 'return' excluding first trailing character of separator
   echo "${lines#?}"
 }
 
-## combine all ids into comma separated string
+## combine all objects into comma separated string
 prepareReadableDisplay () {
   IFS=',' read -r -a metadata <<< "$1"
   metadata=($(printf "%s\n" "${metadata[@]}" | sort -u | tr '\n' ' '))
@@ -124,7 +135,9 @@ IFS=',' read -r -a usedIdentifierIdsArr <<< "$usedIdentifierIds"
 ## generate unique used person attributes
 usedPersonAttributes="$(prepareReadableDisplay $(extractExpressionValues $form_expressions_file 'patient.getAttribute(' ',' ')'))"
 IFS=',' read -r -a usedPersonAttributesArr <<< "$usedPersonAttributes"
-
+## generate unique used roles from all forms
+usedRoles="$(prepareReadableDisplay $(combineAllLinesFromFileIntoOneWithSeparator $form_roles_file ',' '"'))"
+IFS=',' read -r -a usedRolesArr <<< "$usedRoles"
 
 ## prepare usage output
 rm -r usage;mkdir usage
@@ -163,3 +176,15 @@ echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,person_at
 printf "\n${#usedPersonAttributesArr[@]} Used person attribute types in HTML Forms saved in# \n$form_person_attributes_used_csv\n"
 echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,person_attribute_type_id,name,description FROM person_attribute_type WHERE person_attribute_type_id NOT IN ($usedPersonAttributes) INTO OUTFILE '$form_person_attributes_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
 printf "\nNot Used person attribute types in HTML Forms saved in# \n$form_person_attributes_not_used_csv\n"
+
+## print separator horizontal line
+printf '\n%s\n' _________________________________________________________________________________
+
+##generate unique non used person attribute types from all forms
+echo "SELECT 'UUID', 'ROLE', 'DESCRIPTION' UNION ALL SELECT uuid,role,description FROM role WHERE role IN ($usedRoles) INTO OUTFILE '$form_used_roles_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
+printf "\n${#usedRolesArr[@]} Used roles in HTML Forms saved in# \n$form_used_roles_csv\n"
+echo "SELECT 'UUID', 'ROLE', 'DESCRIPTION' UNION ALL SELECT uuid,role,description FROM role WHERE role NOT IN ($usedRoles) INTO OUTFILE '$form_not_used_roles_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
+printf "\nNot Used roles in HTML Forms saved in# \n$form_not_used_roles_csv\n"
+
+## print separator horizontal line
+printf '\n%s\n' _________________________________________________________________________________
