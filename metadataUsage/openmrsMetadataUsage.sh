@@ -94,19 +94,24 @@ combineAllLinesFromFileIntoOneWithSeparator () {
   while IFS= read -r line
   do
     if [ "$line" != "" ]; then
-      lines="$lines$2$3$line$3"
+      line="${line//$2/$3$2$3}"
+      if [ "$lines" == "" ]; then
+        lines="$3$line$3"
+      else
+        lines="$lines$2$3$line$3"
+      fi
     fi
   done < "$1"
   ## echo or 'return' excluding first trailing character of separator
-  echo "${lines#?}"
+  echo "$lines"
 }
 
-## combine all objects into comma separated string
+## combine all objects into comma separated string, first argument; string to prepare, two; wrapper
 prepareReadableDisplay () {
-  IFS=',' read -r -a metadata <<< "$1"
-  metadata=($(printf "%s\n" "${metadata[@]}" | sort -u | tr '\n' ' '))
-  metadataIds=$(IFS=$','; echo "${metadata[*]}")
-  echo "$metadataIds"
+  IFS=',' read -r -a meta <<< "$1"
+  meta=($(printf "%s\n" "${meta[@]}" | sort -u | tr '\n' ' '))
+  metaIds=$(IFS=$','; echo "${meta[*]}")
+  echo "$metaIds"
 }
 
 ## extract expression values; arguments: first; file, second; expression prefix, third argument; separator, forth; toBeRemoved, fifth: wrapper
@@ -120,47 +125,46 @@ extractExpressionValues () {
       ## get value in between () within expression value
       value="${line//$2/}"
       value="${value//$4/}"
-      lines="$lines$3$5$value$5"
+      if [ "$lines" == "" ]; then
+        lines="$5$value$5"
+      else
+        lines="$lines$3$5$value$5"
+      fi  
     fi
   done < "$1"
   ## echo or 'return' excluding first trailing character of separator
-  echo "${lines#?}"
+  echo "$lines"
 }
 
 ## generate unique used concept ids from all forms' questions and answers
-usedConceptIds="$(prepareReadableDisplay $(combineAllLinesFromFileIntoOneWithSeparator $form_concept_grouping_file ','),$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_questions_file ','),$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_answers_file ','))"
-IFS=',' read -r -a usedConceptIdsArr <<< "$usedConceptIds"
+
+usedConceptIds="$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_grouping_file ',' '"'),$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_questions_file ',' '"'),$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_answers_file ',' '"')"
 ## generate unique used program ids from all forms
-usedProgramIds="$(prepareReadableDisplay $(combineAllLinesFromFileIntoOneWithSeparator $form_programs_file ','))"
-IFS=',' read -r -a usedProgramIdsArr <<< "$usedProgramIds"
+usedProgramIds="$(combineAllLinesFromFileIntoOneWithSeparator $form_programs_file ',')"
 ## generate unique used identifiers
-usedIdentifierIds="$(prepareReadableDisplay $(extractExpressionValues $form_expressions_file 'patient.getPatientIdentifier(' ',' ')'))"
-IFS=',' read -r -a usedIdentifierIdsArr <<< "$usedIdentifierIds"
+usedIdentifierIds="$(extractExpressionValues $form_expressions_file 'patient.getPatientIdentifier(' ',' ')')"
 ## generate unique used person attributes
-usedPersonAttributes="$(prepareReadableDisplay $(extractExpressionValues $form_expressions_file 'patient.getAttribute(' ',' ')'))"
-IFS=',' read -r -a usedPersonAttributesArr <<< "$usedPersonAttributes"
+usedPersonAttributes="$(extractExpressionValues $form_expressions_file 'patient.getAttribute(' ',' ')')"
 ## generate unique used roles from all forms
-usedRoles="$(prepareReadableDisplay $(combineAllLinesFromFileIntoOneWithSeparator $form_roles_file ',' '"'))"
-IFS=',' read -r -a usedRolesArr <<< "$usedRoles"
+usedRoles="$(combineAllLinesFromFileIntoOneWithSeparator $form_roles_file ',' '"')"
 ## generate unique used global properties from all forms
-usedGlobalProperties="$(prepareReadableDisplay $(extractExpressionValues $form_defaults_file 'GlobalProperty:' ',' '' '"'))"
-IFS=',' read -r -a usedGlobalPropertiesArr <<< "$usedGlobalProperties"
+usedGlobalProperties="$(extractExpressionValues $form_defaults_file 'GlobalProperty:' ',' '' '"')"
 
 ## prepare usage output
 rm -r usage;mkdir usage
 
 ## TODO support used metadata like concepts in the tree like within programs
 
-usedConceptsIdsPut=$(echo "SELECT 'UUID', 'ID' UNION ALL SELECT uuid,concept_id FROM concept WHERE concept_id IN ($usedConceptIds) INTO OUTFILE '$form_concept_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB)
-printf "\n${#usedConceptIdsArr[@]} Used Concepts in HTML Forms saved in# \n$form_concept_used_csv\n"
-notUsedConceptsIdsPut=$(echo "SELECT 'UUID', 'ID' UNION ALL SELECT uuid,concept_id FROM concept WHERE concept_id NOT IN ($usedConceptIds) INTO OUTFILE '$form_concept_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB)
+usedConceptsIdsPut=$(echo "SELECT 'UUID', 'ID' UNION ALL SELECT uuid,concept_id FROM concept WHERE concept_id IN (SELECT concept_id FROM concept WHERE (concept_id|uuid) IN ($usedConceptIds)) INTO OUTFILE '$form_concept_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB)
+printf "\nUsed Concepts in HTML Forms saved in# \n$form_concept_used_csv\n"
+notUsedConceptsIdsPut=$(echo "SELECT 'UUID', 'ID' UNION ALL SELECT uuid,concept_id FROM concept WHERE concept_id NOT IN (SELECT concept_id FROM concept WHERE (concept_id|uuid) IN ($usedConceptIds)) INTO OUTFILE '$form_concept_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB)
 printf "\nNot Used Concepts in HTML Forms saved in# \n$form_concept_not_used_csv\n"
 
 ## print separator horizontal line
 printf '\n%s\n' _________________________________________________________________________________
 
 echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,program_id,name,description FROM program WHERE program_id IN ($usedProgramIds) INTO OUTFILE '$form_programs_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
-printf "\n${#usedProgramIdsArr[@]} Used Programs in HTML Forms saved in# \n$form_programs_used_csv\n"
+printf "\nUsed Programs in HTML Forms saved in# \n$form_programs_used_csv\n"
 echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,program_id,name,description FROM program WHERE program_id NOT IN ($usedProgramIds) INTO OUTFILE '$form_programs_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
 printf "\nNot Used Programs in HTML Forms saved in# \n$form_programs_not_used_csv\n"
 
@@ -168,7 +172,7 @@ printf "\nNot Used Programs in HTML Forms saved in# \n$form_programs_not_used_cs
 printf '\n%s\n' _________________________________________________________________________________
 
 echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,patient_identifier_type_id,name,description FROM patient_identifier_type WHERE patient_identifier_type_id IN ($usedIdentifierIds) INTO OUTFILE '$form_identifiers_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
-printf "\n${#usedIdentifierIdsArr[@]} Used Identifiers in HTML Forms saved in# \n$form_identifiers_used_csv\n"
+printf "\nUsed Identifiers in HTML Forms saved in# \n$form_identifiers_used_csv\n"
 echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,patient_identifier_type_id,name,description FROM patient_identifier_type WHERE patient_identifier_type_id NOT IN ($usedIdentifierIds) INTO OUTFILE '$form_identifiers_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
 printf "\nNot Used Identifiers in HTML Forms saved in# \n$form_identifiers_not_used_csv\n"
 
@@ -176,7 +180,7 @@ printf "\nNot Used Identifiers in HTML Forms saved in# \n$form_identifiers_not_u
 printf '\n%s\n' _________________________________________________________________________________
 
 echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,person_attribute_type_id,name,description FROM person_attribute_type WHERE person_attribute_type_id IN ($usedPersonAttributes) INTO OUTFILE '$form_person_attributes_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
-printf "\n${#usedPersonAttributesArr[@]} Used person attribute types in HTML Forms saved in# \n$form_person_attributes_used_csv\n"
+printf "\nUsed person attribute types in HTML Forms saved in# \n$form_person_attributes_used_csv\n"
 echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,person_attribute_type_id,name,description FROM person_attribute_type WHERE person_attribute_type_id NOT IN ($usedPersonAttributes) INTO OUTFILE '$form_person_attributes_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
 printf "\nNot Used person attribute types in HTML Forms saved in# \n$form_person_attributes_not_used_csv\n"
 
@@ -184,7 +188,7 @@ printf "\nNot Used person attribute types in HTML Forms saved in# \n$form_person
 printf '\n%s\n' _________________________________________________________________________________
 
 echo "SELECT 'UUID', 'ROLE', 'DESCRIPTION' UNION ALL SELECT uuid,role,description FROM role WHERE role IN ($usedRoles) INTO OUTFILE '$form_used_roles_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
-printf "\n${#usedRolesArr[@]} Used roles in HTML Forms saved in# \n$form_used_roles_csv\n"
+printf "\nUsed roles in HTML Forms saved in# \n$form_used_roles_csv\n"
 echo "SELECT 'UUID', 'ROLE', 'DESCRIPTION' UNION ALL SELECT uuid,role,description FROM role WHERE role NOT IN ($usedRoles) INTO OUTFILE '$form_not_used_roles_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
 printf "\nNot Used roles in HTML Forms saved in# \n$form_not_used_roles_csv\n"
 
@@ -193,7 +197,7 @@ printf '\n%s\n' ________________________________________________________________
 
 ##generate unique used global properties from all forms
 echo "SELECT 'UUID', 'PROPERTY', 'VALUE', 'DESCRIPTION' UNION ALL SELECT uuid,property,property_value,description FROM global_property WHERE property IN ($usedGlobalProperties) INTO OUTFILE '$form_used_global_properties_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
-printf "\n${#usedGlobalPropertiesArr[@]} Used Global Properties in HTML Forms saved in# \n$form_used_global_properties_csv\n"
+printf "\nUsed Global Properties in HTML Forms saved in# \n$form_used_global_properties_csv\n"
 
 ## print separator horizontal line
 printf '\n%s\n' _________________________________________________________________________________
