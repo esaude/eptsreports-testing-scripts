@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## This openmrs bash script helps extract details about 
 
@@ -14,6 +14,8 @@ form_expressions_file="$PWD/data/form_expressions.txt"
 form_locations_file="$PWD/data/form_locations.txt"
 form_roles_file="$PWD/data/form_roles.txt"
 form_defaults_file="$PWD/data/form_defaults.txt"
+##contains form_file: advise to fix it
+form_failed="$PWD/failed/form_failed.txt"
 form_concept_used_csv="$PWD/usage/form_used_concepts.csv"
 form_concept_not_used_csv="$PWD/usage/form_not_used_concepts.csv"
 form_programs_used_csv="$PWD/usage/form_used_programs.csv"
@@ -25,6 +27,7 @@ form_person_attributes_not_used_csv="$PWD/usage/form_not_used_person_attributes.
 form_used_roles_csv="$PWD/usage/form_used_roles.csv"
 form_not_used_roles_csv="$PWD/usage/form_not_used_roles.csv"
 form_used_global_properties_csv="$PWD/usage/form_used_global_properties.csv"
+form_locations_used_csv="$PWD/usage/form_used_locations.csv"
 
 
 ## require mysql command or location, user and database
@@ -37,11 +40,12 @@ fi
 
 ## wait for mysql password if any
 echo -n "Enter Mysql password": 
-read -s MYSQL_PASS
+read -rs MYSQL_PASS
 echo
 ## initialise data location
 rm -r data;mkdir data
-
+mkdir failed
+rm $form_failed
 
 ## extract form uuids and loop through them
 printf "\nStarting to extract forms from the database\n"
@@ -60,9 +64,54 @@ done
 printf "\nFinished extracting forms from the database\n"
 
 
+## extract values from a node, arguments; xml file, node, comma separated attributes whose values to extract
+extractNodeValues () {
+  values=""
+  IFS=',' read -r -a attributes <<< "$3"
+  for a in "${attributes[@]}"
+  do
+    if grep -q $a $1 && grep -q $2 $1; then
+      if [ "$values" != "" ]; then
+        values="$values,"
+      fi
+      node=$(xmllint --xpath '//*/@'$a - <<< "$(find $1 -type f -print | xargs grep $2)")
+      if [ $? -gt 0 ]; then
+  	    ## some error happened, pass this file into failed category
+  	    printf "\nEnsure $2:$a node in data/${1##*/} exist on separate lines in failed/${1##*/}" >> $form_failed
+  	    cp $1 $PWD/failed/${1##*/}
+  	  fi
+  	  values=$values$(cut -d '=' -f 2 <<< $node | sed -e 's/^"//' -e 's/"$//')
+  	fi
+  done
+  echo $values
+}
+
+
+## get values replacing global properties. arguments; values text with gp
+getValuesReplacingGlobalProperties () {
+  finalValues=""
+  if [[ "$1" == *"GlobalProperty:default_location"* ]]; then
+    IFS=',' read -r -a values <<< "$1"
+    for v in "${values[@]}"
+    do
+      if [ "$finalValues" != "" ]; then
+        finalValues="$finalValues,"
+      fi
+      if [[ "$v" = "GlobalProperty:default_location"* ]]; then
+        finalValues=$finalValues$(echo "SELECT GROUP_CONCAT(location_id) FROM location WHERE name = (select property_value from global_property where property = 'default_location')" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB -s)
+      else
+        finalValues=$finalValues$v
+      fi
+    done
+    echo $finalValues
+  else
+    echo $1
+  fi
+}
+
 ## extracting concepts from forms
 printf "\nStarting to extract metadata from forms\n"
-for form_file in $PWD/data/form_*.xml
+for form_file in $PWD/data/form_*.xml $PWD/failed/form_*.xml
 do
   ## simulate loading or progress bar
   echo -n "."
@@ -80,6 +129,8 @@ do
   echo -n 'cat //*/@role' | xmllint --shell $form_file | awk -F\" 'NR % 2 == 0 { print $2 }' >> $form_roles_file
   ## extract roles
   echo -n 'cat //*/@default' | xmllint --shell $form_file | awk -F\" 'NR % 2 == 0 { print $2 }' >> $form_defaults_file
+  ## extract encounterLocations
+  echo $(getValuesReplacingGlobalProperties $(extractNodeValues $form_file 'encounterLocation' 'default,order')) >> $form_locations_file
 done
 printf "\nFinished extracting metadata from forms\n"
 
@@ -121,7 +172,7 @@ extractExpressionValues () {
   do
   	## starts with expression prefix
   	
-    if [[ "$line" = "$2"* ]]; then
+    if [[ "$line" == "$2"* ]]; then
       ## get value in between () within expression value
       value="${line//$2/}"
       value="${value//$4/}"
@@ -149,6 +200,8 @@ usedPersonAttributes="$(extractExpressionValues $form_expressions_file 'patient.
 usedRoles="$(combineAllLinesFromFileIntoOneWithSeparator $form_roles_file ',' '"')"
 ## generate unique used global properties from all forms
 usedGlobalProperties="$(extractExpressionValues $form_defaults_file 'GlobalProperty:' ',' '' '"')"
+## generate unique locations from all forms
+usedLocations="$(combineAllLinesFromFileIntoOneWithSeparator $form_locations_file ',')"
 
 ## prepare usage output
 rm -r usage;mkdir usage
@@ -198,6 +251,13 @@ printf '\n%s\n' ________________________________________________________________
 ##generate unique used global properties from all forms
 echo "SELECT 'UUID', 'PROPERTY', 'VALUE', 'DESCRIPTION' UNION ALL SELECT uuid,property,property_value,description FROM global_property WHERE property IN ($usedGlobalProperties) INTO OUTFILE '$form_used_global_properties_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
 printf "\nUsed Global Properties in HTML Forms saved in# \n$form_used_global_properties_csv\n"
+
+## print separator horizontal line
+printf '\n%s\n' _________________________________________________________________________________
+
+##generate unique used global properties from all forms
+echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,location_id,name,description FROM location WHERE location_id IN ($usedLocations) INTO OUTFILE '$form_locations_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER -p$MYSQL_PASS $MYSQL_OPTS $MYSQL_DB
+printf "\nUsed Locations in HTML Forms saved in# \n$form_locations_used_csv\n"
 
 ## print separator horizontal line
 printf '\n%s\n' _________________________________________________________________________________
