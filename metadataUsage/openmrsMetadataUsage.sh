@@ -113,7 +113,6 @@ do
   MYSQL_DB=$(jq -r ".mysqlDbConnections[$dbConnIndex].database" params.json)
   MYSQL_PASS=$(jq -r ".mysqlDbConnections[$dbConnIndex].password" params.json)
   if [ "$MYSQL_PASS" != "" ]; then
-  do
     MYSQL_PASS_ENTRY="-p$MYSQL_PASS"
   fi
   dbConnCount=$(echo "$dbConnIndex + 1" | bc)
@@ -143,7 +142,7 @@ do
 
 
   ## require mysql command or location, user and database
-  if [ "$MYSQL_CMD" == "" ] || [ "$MYSQL_USER" == "" ] || [ "$MYSQL_OPTS" == "" ] || [ "$MYSQL_DB" == "" ]; then
+  if [ "$MYSQL_CMD" == "" ] || [ "$MYSQL_USER" == "" ] || [ "$MYSQL_DB" == "" ]; then
     printf "\nUsage; ./openmrsMetadataUsage.sh"
     exit 1
   fi

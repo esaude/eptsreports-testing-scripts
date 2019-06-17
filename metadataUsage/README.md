@@ -30,6 +30,13 @@
       "database": "openmrs",
       "username": "openmrs",
       "password": "test"
+    },
+    {
+      "binaryLocation": "mysql",
+      "options": "",
+      "database": "openmrs",
+      "username": "root",
+      "password": "$MYSQL_ROOT_PASSWORD"
     }
   ]
 }
