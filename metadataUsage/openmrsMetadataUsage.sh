@@ -107,35 +107,35 @@ mkdir failed
   
 for ((dbConnIndex=0; dbConnIndex<$(jq ".mysqlDbConnections | length" params.json); dbConnIndex++ ))
 do
-  MYSQL_CMD=$(jq ".mysqlDbConnections[$dbConnIndex].binaryLocation" params.json)
-  MYSQL_USER=$(jq ".mysqlDbConnections[$dbConnIndex].username" params.json)
-  MYSQL_OPTS=$(jq ".mysqlDbConnections[$dbConnIndex].options" params.json)
-  MYSQL_DB=$(jq ".mysqlDbConnections[$dbConnIndex].database" params.json)
-  MYSQL_PASS=$(jq ".mysqlDbConnections[$dbConnIndex].password" params.json)
+  MYSQL_CMD=$(jq -r ".mysqlDbConnections[$dbConnIndex].binaryLocation" params.json)
+  MYSQL_USER=$(jq -r ".mysqlDbConnections[$dbConnIndex].username" params.json)
+  MYSQL_OPTS=$(jq -r ".mysqlDbConnections[$dbConnIndex].options" params.json)
+  MYSQL_DB=$(jq -r ".mysqlDbConnections[$dbConnIndex].database" params.json)
+  MYSQL_PASS=$(jq -r ".mysqlDbConnections[$dbConnIndex].password" params.json)
   dbConnCount=$(echo "$dbConnIndex + 1" | bc)
   
-  form_concept_grouping_file="$PWD/data/$dbConnCount_form_concept_grouping.txt"
-  form_concept_questions_file="$PWD/data/$dbConnCount_form_concept_questions.txt"
-  form_concept_answers_file="$PWD/data/$dbConnCount_form_concept_answers.txt"
-  form_programs_file="$PWD/data/$dbConnCount_form_programs.txt"
-  form_expressions_file="$PWD/data/$dbConnCount_form_expressions.txt"
-  form_locations_file="$PWD/data/$dbConnCount_form_locations.txt"
-  form_roles_file="$PWD/data/$dbConnCount_form_roles.txt"
-  form_defaults_file="$PWD/data/$dbConnCount_form_defaults.txt"
+  form_concept_grouping_file="$PWD/data/$dbConnCount"_form_concept_grouping.txt
+  form_concept_questions_file="$PWD/data/$dbConnCount"_form_concept_questions.txt
+  form_concept_answers_file="$PWD/data/$dbConnCount"_form_concept_answers.txt
+  form_programs_file="$PWD/data/$dbConnCount"_form_programs.txt
+  form_expressions_file="$PWD/data/$dbConnCount"_form_expressions.txt
+  form_locations_file="$PWD/data/$dbConnCount"_form_locations.txt
+  form_roles_file="$PWD/data/$dbConnCount"_form_roles.txt
+  form_defaults_file="$PWD/data/$dbConnCount"_form_defaults.txt
   ##contains form_file: advise to fix it
-  form_failed="$PWD/failed/$dbConnCount_form_failed.txt"
-  form_concept_used_csv="$PWD/usage/$dbConnCount_form_used_concepts.csv"
-  form_concept_not_used_csv="$PWD/usage/$dbConnCount_form_not_used_concepts.csv"
-  form_programs_used_csv="$PWD/usage/$dbConnCount_form_used_programs.csv"
-  form_programs_not_used_csv="$PWD/usage/$dbConnCount_form_not_used_programs.csv"
-  form_identifiers_used_csv="$PWD/usage/$dbConnCount_form_used_identifiers.csv"
-  form_identifiers_not_used_csv="$PWD/usage/$dbConnCount_form_not_used_identifiers.csv"
-  form_person_attributes_used_csv="$PWD/usage/$dbConnCount_form_used_person_attributes.csv"
-  form_person_attributes_not_used_csv="$PWD/$dbConnCount_usage/form_not_used_person_attributes.csv"
-  form_used_roles_csv="$PWD/usage/$dbConnCount_form_used_roles.csv"
-  form_not_used_roles_csv="$PWD/usage/$dbConnCount_form_not_used_roles.csv"
-  form_used_global_properties_csv="$PWD/usage/$dbConnCount_form_used_global_properties.csv"
-  form_locations_used_csv="$PWD/usage/$dbConnCount_form_used_locations.csv"
+  form_failed="$PWD/failed/$dbConnCount"_form_failed.txt
+  form_concept_used_csv="$PWD/usage/$dbConnCount"_form_used_concepts.csv
+  form_concept_not_used_csv="$PWD/usage/$dbConnCount"_form_not_used_concepts.csv
+  form_programs_used_csv="$PWD/usage/$dbConnCount"_form_used_programs.csv
+  form_programs_not_used_csv="$PWD/usage/$dbConnCount"_form_not_used_programs.csv
+  form_identifiers_used_csv="$PWD/usage/$dbConnCount"_form_used_identifiers.csv
+  form_identifiers_not_used_csv="$PWD/usage/$dbConnCount"_form_not_used_identifiers.csv
+  form_person_attributes_used_csv="$PWD/usage/$dbConnCount"_form_used_person_attributes.csv
+  form_person_attributes_not_used_csv="$PWD/usage/$dbConnCount"_form_not_used_person_attributes.csv
+  form_used_roles_csv="$PWD/usage/$dbConnCount"_form_used_roles.csv
+  form_not_used_roles_csv="$PWD/usage/$dbConnCount"_form_not_used_roles.csv
+  form_used_global_properties_csv="$PWD/usage/$dbConnCount"_form_used_global_properties.csv
+  form_locations_used_csv="$PWD/usage/$dbConnCount"_form_used_locations.csv
 
 
   ## require mysql command or location, user and database
@@ -159,14 +159,14 @@ do
     ## clean up the xml data file and save each form named after its form uuid
     xmlData=$(printf "$xmlData")
     ## save xmlData onto a respective form specific file replacing back %
-    echo "${xmlData//PCNT/%}" > "$PWD/data/$dbConnCount_form_$uuid.xml"
+    echo "${xmlData//PCNT/%}" > "$PWD/data/$dbConnCount"_form_"$uuid.xml"
   done
   printf "\nFinished extracting forms from the $dbConnCount: $MYSQL_DB database\n"
 
 
   ## extracting concepts from forms
   printf "\nStarting to extract metadata from forms\n"
-  for form_file in $PWD/data/$dbConnCount_form_*.xml $PWD/failed/$dbConnCount_form_*.xml
+  for form_file in "$PWD/data/$dbConnCount"_form_*.xml "$PWD/failed/$dbConnCount"_form_*.xml
   do
     ## simulate loading or progress bar
     echo -n "."
