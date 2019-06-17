@@ -7,7 +7,7 @@
 
 ### Running the script
 >  Configure mysql instances to extract metadata usages from in `params.json` and run; `./openmrsMetadataUsage.sh`, here's a sample of `params.json` which needs to be in the same folder as the script
-```
+```json
 {
   "mysqlDbConnections": [
     {
