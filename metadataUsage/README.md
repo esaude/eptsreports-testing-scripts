@@ -6,7 +6,34 @@
 > This script has been written against OS X El Capitan 10.11.6 (15G22010), in any case running against another OS or version complains about any external dependencies such as `xmllint`, `jq`, `bc` etc, please manually install those and proceed
 
 ### Running the script
->  Configure mysql instances to extract metadata usages from in params.json and run; `./openmrsMetadataUsage.sh`
+>  Configure mysql instances to extract metadata usages from in `params.json` and run; `./openmrsMetadataUsage.sh`, here's a sample of `params.json` which needs to be in the same folder as the script
+```
+{
+  "mysqlDbConnections": [
+    {
+      "binaryLocation": "mysql",
+      "options": "",
+      "database": "openmrs",
+      "username": "root",
+      "password": ""
+    },
+    {
+      "binaryLocation": "mysql",
+      "options": "",
+      "database": "esaude",
+      "username": "root",
+      "password": ""
+    },
+    {
+      "binaryLocation": "/Users/u/Programs/openmrs-standalone/database/./mysql",
+      "options": "--socket=/tmp/esaude3.sock --max_allowed_packet=96M",
+      "database": "openmrs",
+      "username": "openmrs",
+      "password": "test"
+    }
+  ]
+}
+```
 
 ### Results
 > If running it returned no errors while quitting execution, then three folders should have been created 3 folders; `data, failed, usage`
