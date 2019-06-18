@@ -4,6 +4,7 @@
 
 
 #Collecting MySQL credential
+echo "Collecting MySQL credentials........................................................................"
 echo "MySQL User: "
 read mysql_user
 echo "MySQL Password: "
@@ -12,7 +13,7 @@ echo "MySQL IP: "
 read host
 
 #creating the folder "/epts_issue_data_finder"  in home user  directory if  it  does not exist
-echo "Creating the folder /epts_issue_data_finder  in home user directory if  it  does not exist........"
+echo "Creating the  'epts_issue_data_finder' folder  in home user directory if  it  does not exist........"
 if [ ! -d "~/epts_issue_data_finder" ];
 	then 
 		mkdir ~/epts_issue_data_finder
@@ -92,7 +93,7 @@ query_9="select pa.*  from obs obs inner join encounter enc on  obs.encounter_id
 
 
 #connecting to  MySQL instance
-echo "Connecting  to my your mysql instance................................................"
+echo "Connecting  to your mysql instance................................................"
 for  db in "${db_list[@]}"
 	do 
       		echo "perfoming in $db database............................................" 
@@ -109,4 +110,4 @@ for  db in "${db_list[@]}"
     
 done
 
-echo "Search  complete for data bases ........................................  "
+echo "Search in Data Base(s) completed ........................................  "
