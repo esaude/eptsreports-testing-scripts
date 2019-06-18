@@ -18,6 +18,9 @@ if [ ! -d "~/epts_issue_data_finder" ];
 		mkdir ~/epts_issue_data_finder
 fi
 
+#wipe all data in the folder before running
+rm  ~/epts_issue_data_finder/*
+
 
 #choosing the running  aproach
 echo "Do you  want to  perform this  script in all databases? [y/n] (lower case please)"
