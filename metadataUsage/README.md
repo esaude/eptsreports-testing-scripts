@@ -43,10 +43,11 @@
 ```
 
 ### Results
-> If running it returned no errors while quitting execution, then three folders should have been created 3 folders; `data, failed, usage`
+> If running it returned no errors (logged into `log.out`) while quitting execution, then three folders should have been created 3 folders; `data, failed, usage`
 ```
    drwxr-xr-x  ... data
    drwxr-xr-x  ... failed
+   -rw-r--r--  ... log.out
    -rwxr-xr-x@ ... openmrsMetadataUsage.sh
    drwxr-xr-x  ... usage
    ```

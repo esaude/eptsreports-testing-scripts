@@ -105,8 +105,7 @@ extractExpressionValues () {
   ## echo or 'return' excluding first trailing character of separator
   echo "$lines"
 }
-
-
+ 
 ## initialise data location
 rm -r data;mkdir -p data
 mkdir -p failed
@@ -123,6 +122,12 @@ do
   fi
   dbConnCount=$(echo "$dbConnIndex + 1" | bc)
   
+  ## locate where mysql exported cvs are rightly meant to be saved
+  secureFileLocation=$(echo "SELECT @@secure_file_priv" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB | sed -n '2p')
+  if [ "$secureFileLocation" == "NULL" ] || [ "$secureFileLocation" == "" ]; then
+    secureFileLocation="$PWD/usage"
+  fi
+
   form_concept_grouping_file="$PWD/data/$dbConnCount"_form_concept_grouping.txt
   form_concept_questions_file="$PWD/data/$dbConnCount"_form_concept_questions.txt
   form_concept_answers_file="$PWD/data/$dbConnCount"_form_concept_answers.txt
@@ -133,18 +138,18 @@ do
   form_defaults_file="$PWD/data/$dbConnCount"_form_defaults.txt
   ##contains form_file: advise to fix it
   form_failed="$PWD/failed/$dbConnCount"_form_failed.txt
-  form_concept_used_csv="$PWD/usage/$dbConnCount"_form_used_concepts.csv
-  form_concept_not_used_csv="$PWD/usage/$dbConnCount"_form_not_used_concepts.csv
-  form_programs_used_csv="$PWD/usage/$dbConnCount"_form_used_programs.csv
-  form_programs_not_used_csv="$PWD/usage/$dbConnCount"_form_not_used_programs.csv
-  form_identifiers_used_csv="$PWD/usage/$dbConnCount"_form_used_identifiers.csv
-  form_identifiers_not_used_csv="$PWD/usage/$dbConnCount"_form_not_used_identifiers.csv
-  form_person_attributes_used_csv="$PWD/usage/$dbConnCount"_form_used_person_attributes.csv
-  form_person_attributes_not_used_csv="$PWD/usage/$dbConnCount"_form_not_used_person_attributes.csv
-  form_used_roles_csv="$PWD/usage/$dbConnCount"_form_used_roles.csv
-  form_not_used_roles_csv="$PWD/usage/$dbConnCount"_form_not_used_roles.csv
-  form_used_global_properties_csv="$PWD/usage/$dbConnCount"_form_used_global_properties.csv
-  form_locations_used_csv="$PWD/usage/$dbConnCount"_form_used_locations.csv
+  form_concept_used_csv="$secureFileLocation/$dbConnCount"_form_used_concepts.csv
+  form_concept_not_used_csv="$secureFileLocation/$dbConnCount"_form_not_used_concepts.csv
+  form_programs_used_csv="$secureFileLocation/$dbConnCount"_form_used_programs.csv
+  form_programs_not_used_csv="$secureFileLocation/$dbConnCount"_form_not_used_programs.csv
+  form_identifiers_used_csv="$secureFileLocation/$dbConnCount"_form_used_identifiers.csv
+  form_identifiers_not_used_csv="$secureFileLocation/$dbConnCount"_form_not_used_identifiers.csv
+  form_person_attributes_used_csv="$secureFileLocation/$dbConnCount"_form_used_person_attributes.csv
+  form_person_attributes_not_used_csv="$secureFileLocation/$dbConnCount"_form_not_used_person_attributes.csv
+  form_used_roles_csv="$secureFileLocation/$dbConnCount"_form_used_roles.csv
+  form_not_used_roles_csv="$secureFileLocation/$dbConnCount"_form_not_used_roles.csv
+  form_used_global_properties_csv="$secureFileLocation/$dbConnCount"_form_used_global_properties.csv
+  form_locations_used_csv="$secureFileLocation/$dbConnCount"_form_used_locations.csv
 
 
   ## require mysql command or location, user and database
@@ -154,10 +159,14 @@ do
   fi
   
   
+  printf '\n%s\n' ------------------------------------$dbConnCount:$MYSQL_DB------------------------------------ | tee /dev/fd/3
+  
+  
   rm -f $form_failed
+  
 
   ## extract form uuids and loop through them
-  printf "\nStarting to extract forms from the $dbConnCount: $MYSQL_DB database\n" | tee /dev/fd/3
+  printf "\nStarting to extract forms from the database\n" | tee /dev/fd/3
   $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB -s -N -e "SELECT uuid FROM htmlformentry_html_form" | while IFS= read -r uuid
   do
     ## simulate loading or progress bar
@@ -170,7 +179,7 @@ do
     ## save xmlData onto a respective form specific file replacing back %
     echo "${xmlData//PCNT/%}" > "$PWD/data/$dbConnCount"_form_"$uuid.xml"
   done
-  printf "\nFinished extracting forms from the $dbConnCount: $MYSQL_DB database\n" | tee /dev/fd/3
+  printf "\nFinished extracting forms from the database\n" | tee /dev/fd/3
 
 
   ## extracting concepts from forms
@@ -204,8 +213,20 @@ do
 
 
   ## generate unique used concept ids from all forms' questions and answers
-
-  usedConceptIds="$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_grouping_file ',' '"'),$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_questions_file ',' '"'),$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_answers_file ',' '"')"
+  usedGroupingConceptIds="$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_grouping_file ',' '"')"
+  usedConceptIds="$usedGroupingConceptIds"
+  usedQuestionConceptIds="$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_questions_file ',' '"')"
+  if [ "$usedQuestionConceptIds" != "" ] && [ "$usedConceptIds" != "" ]; then
+    usedConceptIds="$usedConceptIds,$usedQuestionConceptIds"
+  elif [ "$usedQuestionConceptIds" != "" ] && [ "$usedConceptIds" == "" ]; then
+      usedConceptIds="$usedQuestionConceptIds"
+  fi
+  usedAnswerConceptIds="$(combineAllLinesFromFileIntoOneWithSeparator $form_concept_answers_file ',' '"')"
+  if [ "$usedAnswerConceptIds" != "" ] && [ "$usedConceptIds" != "" ]; then
+    usedConceptIds="$usedConceptIds,$usedAnswerConceptIds"
+  elif [ "$usedAnswerConceptIds" != "" ] && [ "$usedConceptIds" == "" ]; then
+      usedConceptIds="$usedAnswerConceptIds"
+  fi
   ## generate unique used program ids from all forms
   usedProgramIds="$(combineAllLinesFromFileIntoOneWithSeparator $form_programs_file ',')"
   ## generate unique used identifiers
@@ -224,57 +245,80 @@ do
 
   ## TODO support used metadata like concepts in the tree like within programs
 
-  usedConceptsIdsPut=$(echo "SELECT 'UUID', 'ID' UNION ALL SELECT uuid,concept_id FROM concept WHERE concept_id IN (SELECT concept_id FROM concept WHERE (concept_id|uuid) IN ($usedConceptIds)) INTO OUTFILE '$form_concept_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB)
-  printf "\nUsed Concepts in HTML Forms saved in# \n$form_concept_used_csv\n" | tee /dev/fd/3
-  notUsedConceptsIdsPut=$(echo "SELECT 'UUID', 'ID' UNION ALL SELECT uuid,concept_id FROM concept WHERE concept_id NOT IN (SELECT concept_id FROM concept WHERE (concept_id|uuid) IN ($usedConceptIds)) INTO OUTFILE '$form_concept_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB)
-  printf "\nNot Used Concepts in HTML Forms saved in# \n$form_concept_not_used_csv\n" | tee /dev/fd/3
+  if [ "$usedConceptIds" != "" ]; then
+    echo "SELECT 'UUID', 'ID' UNION ALL SELECT uuid,concept_id FROM concept WHERE concept_id IN (SELECT concept_id FROM concept WHERE (concept_id|uuid) IN ($usedConceptIds)) INTO OUTFILE '$form_concept_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nUsed Concepts in HTML Forms saved in# \n$form_concept_used_csv\n" | tee /dev/fd/3
+    echo "SELECT 'UUID', 'ID' UNION ALL SELECT uuid,concept_id FROM concept WHERE concept_id NOT IN (SELECT concept_id FROM concept WHERE (concept_id|uuid) IN ($usedConceptIds)) INTO OUTFILE '$form_concept_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nNot Used Concepts in HTML Forms saved in# \n$form_concept_not_used_csv\n" | tee /dev/fd/3
+    
+    ## print separator horizontal line
+    printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+  fi
+  
+  if [ "$usedProgramIds" != "" ]; then
+    echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,program_id,name,description FROM program WHERE program_id IN ($usedProgramIds) INTO OUTFILE '$form_programs_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nUsed Programs in HTML Forms saved in# \n$form_programs_used_csv\n" | tee /dev/fd/3
+    echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,program_id,name,description FROM program WHERE program_id NOT IN ($usedProgramIds) INTO OUTFILE '$form_programs_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nNot Used Programs in HTML Forms saved in# \n$form_programs_not_used_csv\n" | tee /dev/fd/3
 
-  ## print separator horizontal line
-  printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+    ## print separator horizontal line
+    printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+  fi
 
-  echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,program_id,name,description FROM program WHERE program_id IN ($usedProgramIds) INTO OUTFILE '$form_programs_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
-  printf "\nUsed Programs in HTML Forms saved in# \n$form_programs_used_csv\n" | tee /dev/fd/3
-  echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,program_id,name,description FROM program WHERE program_id NOT IN ($usedProgramIds) INTO OUTFILE '$form_programs_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
-  printf "\nNot Used Programs in HTML Forms saved in# \n$form_programs_not_used_csv\n" | tee /dev/fd/3
+  if [ "$usedIdentifierIds" != "" ]; then
+    echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,patient_identifier_type_id,name,description FROM patient_identifier_type WHERE patient_identifier_type_id IN ($usedIdentifierIds) INTO OUTFILE '$form_identifiers_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nUsed Identifiers in HTML Forms saved in# \n$form_identifiers_used_csv\n" | tee /dev/fd/3
+    echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,patient_identifier_type_id,name,description FROM patient_identifier_type WHERE patient_identifier_type_id NOT IN ($usedIdentifierIds) INTO OUTFILE '$form_identifiers_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nNot Used Identifiers in HTML Forms saved in# \n$form_identifiers_not_used_csv\n" | tee /dev/fd/3
 
-  ## print separator horizontal line
-  printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+    ## print separator horizontal line
+    printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+  fi
+  
+  if [ "$usedPersonAttributes" != "" ]; then
+    echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,person_attribute_type_id,name,description FROM person_attribute_type WHERE person_attribute_type_id IN ($usedPersonAttributes) INTO OUTFILE '$form_person_attributes_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nUsed person attribute types in HTML Forms saved in# \n$form_person_attributes_used_csv\n" | tee /dev/fd/3
+    echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,person_attribute_type_id,name,description FROM person_attribute_type WHERE person_attribute_type_id NOT IN ($usedPersonAttributes) INTO OUTFILE '$form_person_attributes_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nNot Used person attribute types in HTML Forms saved in# \n$form_person_attributes_not_used_csv\n" | tee /dev/fd/3
 
-  echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,patient_identifier_type_id,name,description FROM patient_identifier_type WHERE patient_identifier_type_id IN ($usedIdentifierIds) INTO OUTFILE '$form_identifiers_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
-  printf "\nUsed Identifiers in HTML Forms saved in# \n$form_identifiers_used_csv\n" | tee /dev/fd/3
-  echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,patient_identifier_type_id,name,description FROM patient_identifier_type WHERE patient_identifier_type_id NOT IN ($usedIdentifierIds) INTO OUTFILE '$form_identifiers_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
-  printf "\nNot Used Identifiers in HTML Forms saved in# \n$form_identifiers_not_used_csv\n" | tee /dev/fd/3
+    ## print separator horizontal line
+    printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+  fi
 
-  ## print separator horizontal line
-  printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+  if [ "$usedRoles" != "" ]; then
+    echo "SELECT 'UUID', 'ROLE', 'DESCRIPTION' UNION ALL SELECT uuid,role,description FROM role WHERE role IN ($usedRoles) INTO OUTFILE '$form_used_roles_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nUsed roles in HTML Forms saved in# \n$form_used_roles_csv\n" | tee /dev/fd/3
+    echo "SELECT 'UUID', 'ROLE', 'DESCRIPTION' UNION ALL SELECT uuid,role,description FROM role WHERE role NOT IN ($usedRoles) INTO OUTFILE '$form_not_used_roles_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nNot Used roles in HTML Forms saved in# \n$form_not_used_roles_csv\n" | tee /dev/fd/3
 
-  echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,person_attribute_type_id,name,description FROM person_attribute_type WHERE person_attribute_type_id IN ($usedPersonAttributes) INTO OUTFILE '$form_person_attributes_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
-  printf "\nUsed person attribute types in HTML Forms saved in# \n$form_person_attributes_used_csv\n" | tee /dev/fd/3
-  echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,person_attribute_type_id,name,description FROM person_attribute_type WHERE person_attribute_type_id NOT IN ($usedPersonAttributes) INTO OUTFILE '$form_person_attributes_not_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
-  printf "\nNot Used person attribute types in HTML Forms saved in# \n$form_person_attributes_not_used_csv\n" | tee /dev/fd/3
+    ## print separator horizontal line
+    printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+  fi
+  
+  if [ "$usedGlobalProperties" != "" ]; then
+    ##generate unique used global properties from all forms
+    echo "SELECT 'UUID', 'PROPERTY', 'VALUE', 'DESCRIPTION' UNION ALL SELECT uuid,property,property_value,description FROM global_property WHERE property IN ($usedGlobalProperties) INTO OUTFILE '$form_used_global_properties_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nUsed Global Properties in HTML Forms saved in# \n$form_used_global_properties_csv\n" | tee /dev/fd/3
 
-  ## print separator horizontal line
-  printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+    ## print separator horizontal line
+    printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+  fi
 
-  echo "SELECT 'UUID', 'ROLE', 'DESCRIPTION' UNION ALL SELECT uuid,role,description FROM role WHERE role IN ($usedRoles) INTO OUTFILE '$form_used_roles_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
-  printf "\nUsed roles in HTML Forms saved in# \n$form_used_roles_csv\n" | tee /dev/fd/3
-  echo "SELECT 'UUID', 'ROLE', 'DESCRIPTION' UNION ALL SELECT uuid,role,description FROM role WHERE role NOT IN ($usedRoles) INTO OUTFILE '$form_not_used_roles_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
-  printf "\nNot Used roles in HTML Forms saved in# \n$form_not_used_roles_csv\n" | tee /dev/fd/3
+  if [ "$usedLocations" != "" ]; then
+    ##generate unique used locations from all forms
+    echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,location_id,name,description FROM location WHERE location_id IN ($usedLocations) INTO OUTFILE '$form_locations_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
+    printf "\nUsed Locations in HTML Forms saved in# \n$form_locations_used_csv\n" | tee /dev/fd/3
 
-  ## print separator horizontal line
-  printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
-
-  ##generate unique used global properties from all forms
-  echo "SELECT 'UUID', 'PROPERTY', 'VALUE', 'DESCRIPTION' UNION ALL SELECT uuid,property,property_value,description FROM global_property WHERE property IN ($usedGlobalProperties) INTO OUTFILE '$form_used_global_properties_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
-  printf "\nUsed Global Properties in HTML Forms saved in# \n$form_used_global_properties_csv\n" | tee /dev/fd/3
-
-  ## print separator horizontal line
-  printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
-
-  ##generate unique used global properties from all forms
-  echo "SELECT 'UUID', 'ID', 'NAME', 'DESCRIPTION' UNION ALL SELECT uuid,location_id,name,description FROM location WHERE location_id IN ($usedLocations) INTO OUTFILE '$form_locations_used_csv' FIELDS TERMINATED BY ','" | $MYSQL_CMD -u$MYSQL_USER $MYSQL_PASS_ENTRY $MYSQL_OPTS $MYSQL_DB
-  printf "\nUsed Locations in HTML Forms saved in# \n$form_locations_used_csv\n" | tee /dev/fd/3
-
-  ## print separator horizontal line
-  printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+    ## print separator horizontal line
+    printf '\n%s\n' _________________________________________________________________________________ | tee /dev/fd/3
+  fi
+  
+  ## ensure exports are in usage folder
+  if [[ "$secureFileLocation" != "$PWD/usage" ]]; then
+     printf "\nMoving all *_form_*.csv files from $secureFileLocation into $PWD/usage\n" | tee /dev/fd/3
+    mv "$secureFileLocation/$dbConnCount"_form_*.csv "$PWD/usage"
+  fi
+  
+  printf '\n%s\n' ------------------------------------$dbConnCount:$MYSQL_DB------------------------------------ | tee /dev/fd/3
+  
 done
