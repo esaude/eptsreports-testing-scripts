@@ -3,10 +3,8 @@
 
 
 ### Setup
-> This script has been written against OS X El Capitan 10.11.6 (15G22010), in any case running against another OS or version complains about any external dependencies such as `xmllint`, `jq`, `bc` etc, please manually install those and proceed
-
-### Running the script
->  Configure mysql instances to extract metadata usages from in `params.json` and run; `./openmrsMetadataUsage.sh`, here's a sample of `params.json` which needs to be in the same folder as the script
+> This script has been written against OS X El Capitan 10.11.6 (15G22010), in any case running against another OS or version complains about any external dependencies such as `xmllint`, `jq`, `bc` etc, please manually install those and proceed.
+Configure mysql instances to extract metadata usages within `params.json`, here's a sample content and the this file needs to be in the same folder as the script
 ```json
 {
   "mysqlDbConnections": [
@@ -42,6 +40,9 @@
 }
 ```
 
+### Running the script
+>  Run; `./openmrsMetadataUsage.sh`
+
 ### Results
 > If running it returned no errors (logged into `log.out`) while quitting execution, then three folders should have been created 3 folders; `data, failed, usage`
 ```
@@ -52,5 +53,5 @@
    drwxr-xr-x  ... usage
    ```
    `data`: contains xml forms export from the database as well as metadata field extracts
-   `failed`: contains failed xml forms which need human intervention, the details of what failed in text files
+   `failed`: contains failed xml forms which need human intervention, the details of what failed in text files such as; `*_form_failed.txt`
    `usage`: contains csv output per exported metadata objects

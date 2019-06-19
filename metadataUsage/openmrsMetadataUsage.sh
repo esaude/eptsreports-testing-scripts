@@ -112,11 +112,11 @@ mkdir -p failed
   
 for ((dbConnIndex=0; dbConnIndex<$(jq ".mysqlDbConnections | length" params.json); dbConnIndex++ ))
 do
-  MYSQL_CMD=$(jq -r ".mysqlDbConnections[$dbConnIndex].binaryLocation" params.json)
-  MYSQL_USER=$(jq -r ".mysqlDbConnections[$dbConnIndex].username" params.json)
-  MYSQL_OPTS=$(jq -r ".mysqlDbConnections[$dbConnIndex].options" params.json)
-  MYSQL_DB=$(jq -r ".mysqlDbConnections[$dbConnIndex].database" params.json)
-  MYSQL_PASS=$(jq -r ".mysqlDbConnections[$dbConnIndex].password" params.json)
+  eval MYSQL_CMD=$(jq -r ".mysqlDbConnections[$dbConnIndex].binaryLocation" params.json)
+  eval MYSQL_USER=$(jq -r ".mysqlDbConnections[$dbConnIndex].username" params.json)
+  eval MYSQL_OPTS=$(jq -r ".mysqlDbConnections[$dbConnIndex].options" params.json)
+  eval MYSQL_DB=$(jq -r ".mysqlDbConnections[$dbConnIndex].database" params.json)
+  eval MYSQL_PASS=$(jq -r ".mysqlDbConnections[$dbConnIndex].password" params.json)
   if [ "$MYSQL_PASS" != "" ]; then
     MYSQL_PASS_ENTRY="-p$MYSQL_PASS"
   fi
