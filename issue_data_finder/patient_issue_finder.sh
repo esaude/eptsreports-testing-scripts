@@ -33,12 +33,23 @@ declare -a  db_list=()
 
 if [ $all_db_anserwer == "y" ]
 	then
-    		mysql -u $mysql_user -p$mysql_passwd -h $host -e "show databases;" >  ~/epts_issue_data_finder/temp_file.txt
+    		mysql -u $mysql_user -p$mysql_passwd -h $host -e "show databases;" >  temp_file.txt
 
-                readarray db_list   <  ~/epts_issue_data_finder/temp_file.txt
-		#unset all default databases from array
+                #readarray db_list   <  ~/epts_issue_data_finder/temp_file.txt
+		
+                idx=0
+                input="temp_file.txt"
+                while IFS= read -r line
+                do
+                
+                        db_list[idx]=$line;
+                        idx=$((idx+1)) 
+
+                done < "$input"
+
+                #unset all default databases from array
 		i_schm="information_schema"
-        p_schm="performance_schema"
+                p_schm="performance_schema"
 		msql="mysql"
 		daBase="Database"
 		index=0
@@ -69,7 +80,9 @@ else
     	echo "Please type y or n"
 	exit 1
 fi    
-
+echo ""
+echo "list of  data bases $db_list"
+echo ""
 ####  the bellow  queries  will used to run in mentioned partners databases  ####
 #--Get enrolled patients in any program but have null date of enrollment
 query_1=" select p.*  from  patient_program pp inner  join patient p on pp.patient_id=p.patient_id where  pp.date_enrolled is null; "
@@ -97,8 +110,9 @@ query_11="select  pa.*, e.date_created, prs.death_date from encounter e inner  j
 
 #connecting to  MySQL instance
 echo "Connecting  to your mysql instance................................................"
-for  db in "${db_list[@]}"
-	do 
+for  db in "${db_list[@]}"mv
+	do
+        echo "   " 
         echo "##################################  perfoming in $db database............................................" 
             mkdir ~/epts_issue_data_finder/"$db"
             echo " executing (query_1) get enrolled patients in any program but have null date of enrollment....................."
@@ -124,8 +138,14 @@ for  db in "${db_list[@]}"
             echo " executing (query_11) Get patients with encounter datetime after his  death  date....................."
             mysql -u $mysql_user -p$mysql_passwd -h $host -D$db -e "$query_11" >  ~/epts_issue_data_finder/"$db"/"$db"_get_patients_with_encounter_datetime_after_his_death_date.csv
 
-		echo "concluded in $db...................................................."	
-    
+	    echo "concluded in $db...................................................."
+            
 done
 
+echo "   "
 echo "Search in Data Base(s) completed ........................................  "
+echo "   "
+
+echo "The files are located in 'epts_issue_data_finder' in your home directory "
+
+
