@@ -104,11 +104,11 @@ queries[0,0]="SELECT program_id,name,retired program_retired,uuid FROM program O
 queries[0,1]="all programs"
 
 #--Get all the workflow of the programs
-queries[1,0]="SELECT p.program_workflow_id,p.program_id,p.retired program_workflow_retired, p.concept_id,c.name,p.uuid program_workflow_uuid,c.uuid concept_uuid FROM program_workflow p INNER JOIN concept_name c ON p.concept_id=c.concept_id GROUP BY p.program_workflow_id ORDER BY program_workflow_id;"
+queries[1,0]="SELECT p.program_workflow_id,p.program_id,p.retired program_workflow_retired, p.concept_id,c.name,p.uuid program_workflow_uuid,c.uuid concept_uuid FROM program_workflow p INNER JOIN concept_name c ON p.concept_id=c.concept_id ORDER BY program_workflow_id;"
 queries[1,1]="all workflow"
 
 #--Get all the workflow states
-queries[2,0]="SELECT p.program_workflow_id,p.program_Workflow_state_id,p.retired program_workflow_state_retired, p.concept_id, c.name,p.uuid program_workflow_state_uuid,c.uuid concept_uuid FROM program_workflow_state p INNER JOIN concept_name c ON p.concept_id=c.concept_id GROUP BY p.program_workflow_state_id ORDER BY program_workflow_id;"
+queries[2,0]="SELECT p.program_workflow_id,p.program_Workflow_state_id,p.retired program_workflow_state_retired, p.concept_id, c.name, p.uuid program_workflow_state_uuid FROM program_workflow_state p INNER JOIN concept_name c ON p.concept_id=c.concept_id ORDER BY program_workflow_id;"
 queries[2,1]="all workflow states"
 
 #--Get all the person attribute types

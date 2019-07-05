@@ -1,0 +1,11 @@
+Database
+information_schema
+ccs
+merge_db
+metadata
+mysql
+new_schema
+openmrs
+performance_schema
+server1
+sys
