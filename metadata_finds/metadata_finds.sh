@@ -9,9 +9,9 @@ echo "MySQL User: "
 read mysql_user
 echo "MySQL Password: "
 read -s mysql_passwd
-#echo "MySQL IP: "
-#read host
-host="localhost"
+echo "MySQL IP: "
+read host
+#host="localhost"
 #creating the folder "/epts_metadata_finds"  in home user  directory if  it  does not exist
 echo "Creating the  'epts_metadata_finds' folder  in home user directory if  it  does not exist........"
 if [ ! -d "~/epts_metadata_finds" ];
@@ -59,9 +59,12 @@ if [ $all_db_anserwer == "y" ]
                 p_schm="performance_schema"
 		msql="mysql"
 		daBase="Database"
+                sys="sys"
+                new_schema="new_schema"
+
 		index=0
 		for i in ${db_list[@]}; do
-                        if [ "$i" = "$i_schm" ] || [ "$i" = "$p_schm" ] || [ "$i" = "$msql" ] || [ "$i" = "$daBase" ]; then
+                        if [ "$i" = "$i_schm" ] || [ "$i" = "$p_schm" ] || [ "$i" = "$msql" ] || [ "$i" = "$daBase" ] || [ "$i" = "$sys" ] || [ "$i" = "$new_schema" ]; then
                                 unset db_list[$index]            
                         fi 
                         let index++
@@ -92,7 +95,7 @@ echo ""
 echo "Do you which to continue... [y/n] (lower case please)"
 read continuar
 
-if [ $continuar == "n"]
+if [ $continuar == "n" ]
         then
                 exit 1
 fi
