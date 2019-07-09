@@ -73,7 +73,7 @@ if [ $all_db_anserwer == "y" ]
 elif [ $all_db_anserwer == "n" ];
 	then
     		#Loading  the databases names
-   		echo  "How mamy data bases you want to  identify the metadata?"
+   		echo  "How many data bases you want to  identify the metadata?"
     		read db_num
 
     		index=1
@@ -115,23 +115,23 @@ queries[2,0]="SELECT p.program_workflow_id,p.program_Workflow_state_id,p.retired
 queries[2,1]="all-workflow-states"
 
 #--Get all the person attribute types
-queries[3,0]="SELECT person_attribute_type_id, name,retired,uuid FROM  person_attribute_type ORDER BY person_attribute_type_id"
+queries[3,0]="SELECT person_attribute_type_id, name,retired,retire_reason,date_retired,uuid FROM  person_attribute_type ORDER BY person_attribute_type_id"
 queries[3,1]="all-person-attributes"
 
 #--Get all the encounter type
-queries[4,0]="SELECT encounter_type_id, name, retired,uuid FROM encounter_type ORDER BY encounter_type_id"
+queries[4,0]="SELECT encounter_type_id, name, retired,retire_reason,date_retired,uuid FROM encounter_type ORDER BY encounter_type_id"
 queries[4,1]="all-encounter-types"
 
 #--Get all the forms
-queries[5,0]="SELECT form_id, name,retired,uuid FROM form"
+queries[5,0]="SELECT form_id,name,description,encounter_type,retired,retired_reason,date_retired,uuid FROM form"
 queries[5,1]="all-forms"
 
 #--Get all patient identifier type
-queries[6,0]="SELECT patient_identifier_type_id, name,retired,uuid FROM  patient_identifier_type"
+queries[6,0]="SELECT patient_identifier_type_id, name,required,retired,retire_reason,date_retired,uuid FROM  patient_identifier_type"
 queries[6,1]="all-identifier-types"
 
 #--Get all order types
-queries[7,0]="SELECT order_type_id,name,retired,uuid FROM order_type"
+queries[7,0]="SELECT order_type_id,name,retired,retire_reason,date_retired,uuid FROM order_type"
 queries[7,1]="all-order-types"
 
 #--Get all user roles
@@ -139,12 +139,16 @@ queries[8,0]="SELECT role,uuid FROM role ORDER BY role"
 queries[8,1]="all-roles"
 
 #--Get all visit types
-queries[9,0]="SELECT visit_type_id,name,retired,uuid FROM visit_type ORDER BY visit_type_id"
+queries[9,0]="SELECT visit_type_id,name,retired,retire_reason,date_retired,uuid FROM visit_type ORDER BY visit_type_id"
 queries[9,1]="all-visit-types"
 
 #--Get all forms not being used in any encounter
-queries[10,0]="SELECT form_id,name,retired,uuid FROM form WHERE form_id NOT IN (SELECT DISTINCT form_id FROM encounter)"
+queries[10,0]="SELECT form_id,name,retired,retired_reason,date_retired,uuid FROM form WHERE form_id NOT IN (SELECT DISTINCT form_id FROM encounter)"
 queries[10,1]="all-forms-not-in-encounter"
+
+#--Get all concepts
+queries[11,0]="SELECT concept_id,short_name,retired,retired_by,date_retired,retire_reason,uuid FROM concept ORDER BY concept_id"
+queries[11,1]="all-concepts"
 
 
 #Get Mysql files writing directory
@@ -179,13 +183,12 @@ for  db in "${db_list[@]}"
             #Give the ownership to mysql cause if not will not be able to right in the folder
             chown -R mysql:mysql $path
 
-        for((i=0;i<=10;i++));
+        for((i=0;i<=11;i++));
         do
-             echo "${queries[$i,1]}"
+             echo "Processing...${queries[$i,1]}"
              sql="${queries[$i,0]} INTO OUTFILE '$path/$db_${queries[$i,1]}.csv';"
-             echo " Here is the query: $sql"
+        #      echo " Here is the query: $sql" ## for debugging
              mysql -u $mysql_user -p$mysql_passwd -h $host -D$db -e "$sql"
-             #mysql -u $mysql_user -p$mysql_passwd -h $host -D$db -e "${queries[$i,0]}" >  ~/epts_metadata_finds/"$db"/"$db_${queries[$i,1]}.csv"
         done 
         
 	echo "concluded in $db...................................................."
@@ -203,7 +206,7 @@ echo "........................................"
 echo "............................................."
 echo "   "
 
-echo "The files are located in 'epts_metadata_finds' in your home directory "
+echo "The files are located in '~/epts_metadata_finds' in your home directory "
 echo "Please copy all the folder and send to Jembi..."
 
 
