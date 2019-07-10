@@ -12,6 +12,18 @@ read -s mysql_passwd
 echo "MySQL IP: "
 read host
 #host="localhost"
+
+# validate the MySQL Credentials
+until mysql -u $mysql_user -p$mysql_passwd -h $host -e ";" ; do
+        echo "Can't connect to MySQL, please retry..."
+        echo "MySQL User: "
+        read mysql_user
+        echo "MySQL Password: "
+        read -s mysql_passwd
+        echo "MySQL IP: "
+        read host
+done
+
 #creating the folder "/epts_metadata_finds"  in home user  directory if  it  does not exist
 echo "Creating the  'epts_metadata_finds' folder  in home user directory if  it  does not exist........"
 if [ ! -d "~/epts_metadata_finds" ];
@@ -44,7 +56,7 @@ if [ $all_db_anserwer == "y" ]
                 file="temp_file.txt"
                 while IFS= read -r line;
                 do
-                        echo "Do you  want to  add $line database to the investigation? [y/n] (lower case please)"
+                        echo "Do you  want to  add '$line' database to the investigation? [y/n] (lower case please)"
                         read sim </dev/tty
                         if [[ $sim == "y" ]];
                                 then
@@ -73,7 +85,7 @@ if [ $all_db_anserwer == "y" ]
 elif [ $all_db_anserwer == "n" ];
 	then
     		#Loading  the databases names
-   		echo  "How many data bases you want to  identify the metadata?"
+   		echo  "How many databases you want to scan to identify the metadata?"
     		read db_num
 
     		index=1
@@ -90,7 +102,7 @@ else
     	echo "Please type y or n"
 	exit 1
 fi    
-echo "Here is the list I will be working on ${db_list[@]}"
+echo "Here is the list I will be working on: [${db_list[@]}]"
 echo ""
 echo "Do you which to continue... [y/n] (lower case please)"
 read continuar
