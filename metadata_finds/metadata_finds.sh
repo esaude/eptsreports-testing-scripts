@@ -162,6 +162,9 @@ queries[10,1]="all-forms-not-in-encounter"
 queries[11,0]="SELECT concept_id,short_name,retired,retired_by,date_retired,retire_reason,uuid FROM concept ORDER BY concept_id"
 queries[11,1]="all-concepts"
 
+#--Get all relationship types
+queries[12,0]="SELECT relationship_type_id,a_is_to_b,b_is_to_a,description,retired,retired_by,date_retired,retire_reason,uuid FROM relationship_type ORDER BY relationship_type_id"
+queries[12,1]="all-relationship-types"
 
 #Get Mysql files writing directory
 #Files will be written in this directory then copied to ~/epts_metadata_finds
@@ -195,7 +198,7 @@ for  db in "${db_list[@]}"
             #Give the ownership to mysql cause if not will not be able to right in the folder
             chown -R mysql:mysql $path
 
-        for((i=0;i<=11;i++));
+        for((i=0;i<=12;i++));
         do
              echo "Processing...${queries[$i,1]}"
              sql="${queries[$i,0]} INTO OUTFILE '$path/$db_${queries[$i,1]}.csv';"
