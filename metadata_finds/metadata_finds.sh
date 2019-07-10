@@ -159,7 +159,7 @@ queries[10,0]="SELECT form_id,name,retired,retired_reason,date_retired,uuid FROM
 queries[10,1]="all-forms-not-in-encounter"
 
 #--Get all concepts
-queries[11,0]="SELECT concept_id,short_name,retired,retired_by,date_retired,retire_reason,uuid FROM concept ORDER BY concept_id"
+queries[11,0]="SELECT c.concept_id,cn.name,cn.concept_name_type,c.retired,c.retired_by,c.date_retired,c.retire_reason,c.uuid FROM concept c INNER JOIN concept_name cn on cn.concept_id=c.concept_id ORDER BY c.concept_id"
 queries[11,1]="all-concepts"
 
 #--Get all relationship types
