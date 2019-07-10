@@ -201,7 +201,7 @@ for  db in "${db_list[@]}"
         for((i=0;i<=12;i++));
         do
              echo "Processing...${queries[$i,1]}"
-             sql="${queries[$i,0]} INTO OUTFILE '$path/$db_${queries[$i,1]}.csv';"
+             sql="${queries[$i,0]} INTO OUTFILE '$path/$db_${queries[$i,1]}.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
         #      echo " Here is the query: $sql" ## for debugging
              mysql -u $mysql_user -p$mysql_passwd -h $host -D$db -e "$sql"
         done 
