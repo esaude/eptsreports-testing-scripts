@@ -33,10 +33,12 @@ declare -a  db_list=()
 
 if [ $all_db_anserwer == "y" ]
 	then
+                #write all the out put to a file for show database
     		mysql -u $mysql_user -p$mysql_passwd -h $host -e "show databases;" >  temp_file.txt
 
                 #readarray db_list   <  ~/epts_issue_data_finder/temp_file.txt
 		
+                #start putting all the data to an array
                 idx=0
                 input="temp_file.txt"
                 while IFS= read -r line
@@ -54,9 +56,9 @@ if [ $all_db_anserwer == "y" ]
 		daBase="Database"
 		index=0
 		for i in ${db_list[@]}; do
-            if [ "$i" = "$i_schm" ] || [ "$i" = "$p_schm" ] || [ "$i" = "$msql" ] || [ "$i" = "$daBase" ]; then
-                unset db_list[$index]            
-            fi 
+                        if [ "$i" = "$i_schm" ] || [ "$i" = "$p_schm" ] || [ "$i" = "$msql" ] || [ "$i" = "$daBase" ]; then
+                                unset db_list[$index]            
+                        fi 
             let index++
         done
 
