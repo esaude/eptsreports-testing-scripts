@@ -59,7 +59,7 @@ if [ $all_db_anserwer == "y" ]
                         echo "Do you  want to  add '$line' database to the investigation? [y/n] (lower case please)"
                         read sim </dev/tty
                         if [[ $sim == "y" ]];
-                                then
+                               then
                                         echo "Adding..."
                                         db_list[idx]=$line;
                                         idx=$((idx+1)) 
@@ -184,7 +184,10 @@ do
 done < "$file"
 
 #Remove all the content of mysql file path before start creating new files
-rm -rf $mysqlPath*
+if [ "$mysqlPath" != '' ];
+then
+        rm -rf $mysqlPath*
+fi
 #change this funtion to use a loop by creating the queries as arrays.
 #connecting to  MySQL instance
 echo "Connecting  to your mysql instance................................................"
@@ -192,11 +195,18 @@ for  db in "${db_list[@]}"
 	do
         echo "   " 
         echo "##################################  perfoming in $db database............................................" 
-            #mkdir ~/epts_metadata_finds/"$db"
-            path=$mysqlPath"$db"
-            mkdir $path
-            #Give the ownership to mysql cause if not will not be able to right in the folder
-            chown -R mysql:mysql $path
+            if [[ -z "$mysqlPath" ]];
+            then
+            
+                mkdir ~/epts_metadata_finds/"$db"
+                path=$db
+            else
+                path=$mysqlPath"$db"
+                mkdir $path
+            
+                #Give the ownership to mysql cause if not will not be able to right in the folder
+                chown -R mysql:mysql $path
+            fi
 
         for((i=0;i<=12;i++));
         do
@@ -204,6 +214,10 @@ for  db in "${db_list[@]}"
              sql="${queries[$i,0]} INTO OUTFILE '$path/$db_${queries[$i,1]}.csv' FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\n';"
         #      echo " Here is the query: $sql" ## for debugging
              mysql -u $mysql_user -p$mysql_passwd -h $host -D$db -e "$sql"
+             if [[ -z "$mysqlPath" ]];
+             then
+                mv -v /var/lib/mysql/$db/$db_${queries[$i,1]}.csv ~/epts_metadata_finds/$db/
+             fi
         done 
         
 	echo "concluded in $db...................................................."
@@ -211,7 +225,10 @@ for  db in "${db_list[@]}"
 done
 
 #moving now all the files to ~/epts_metadata_finds
-cp -v -r $mysqlPath* ~/epts_metadata_finds/
+if [ "$mysqlPath" != '' ];
+then
+        cp -v -r $mysqlPath* ~/epts_metadata_finds/
+fi
 ls ~/epts_metadata_finds/
 echo "   "
 echo "Search in Data Base(s) completed ........................................  "
