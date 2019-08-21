@@ -1,6 +1,4 @@
-
---INSERT INTO `encounter_type` VALUES (48,'APSS: PREVENÇÃO POSITIVA - SEGUIMENTO','Ficha de apoio psicossocial e prevenção positiva - Seguimento',271,'2019-04-03 10:58:35',0,NULL,NULL,NULL,'f4aa93fe-8737-4f70-9532-542b768459d7',NULL,NULL);
-
+ 
 INSERT INTO `encounter_type` VALUES (48,'Levantamento de ARV Master Card','Registo de levantamento de ARV no Master Card',1,'2019-07-09 13:03:45',0,NULL,NULL,NULL,'cce7b2ec-4fc0-4f9e-806d-b1c4ee9577db',NULL,NULL);
 
 INSERT INTO `encounter_type` VALUES (49,'Master Card - Ficha Resumo','Ficha resumo no master card',1,'2019-07-31 14:23:47',0,NULL,NULL,NULL,'e422ecf9-75dd-4367-b21e-54bccabc4763',NULL,NULL);
