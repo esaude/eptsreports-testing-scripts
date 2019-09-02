@@ -1,4 +1,9 @@
-22--encounter_type
+
+--visit-type
+
+insert into visit_type (visit_type_id,name,uuid,creator,date_created,retired) values(17,'MASTER CARD','16e8e70e-71a9-4ba7-9138-dfaae88a6969',1,'2019-09-01 11:55',0);
+
+--encounter_type
 
 --INSERT INTO `encounter_type` VALUES (6,'S.TARV: ADULTO SEGUIMENTO','seguimento visita do paciente adulto',271,'2019-04-03 10:58:37',0,NULL,NULL,NULL,'e278f956-1d5f-11e0-b929-000c29ad1d07',NULL,NULL);
  
