@@ -55,3 +55,6 @@ Configure mysql instances to extract metadata usages within `params.json`, here'
    `data`: contains xml forms export from the database as well as metadata field extracts
    `failed`: contains failed xml forms which need human intervention, the details of what failed in text files such as; `*_form_failed.txt`
    `usage`: contains csv output per exported metadata objects
+
+### Troubleshooting
+> if genarated usage folder is empty while /var/lib/mysql-files/ contains generated csv files, you can move it manually as root or with sudo typing: `mv /var/lib/mysql-files/*.csv usage/`
