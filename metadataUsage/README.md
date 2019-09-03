@@ -57,4 +57,7 @@ Configure mysql instances to extract metadata usages within `params.json`, here'
    `usage`: contains csv output per exported metadata objects
 
 ### Troubleshooting
-> if genarated usage folder is empty while /var/lib/mysql-files/ contains generated csv files, you can move it manually as root or with sudo typing: `mv /var/lib/mysql-files/*.csv usage/`
+> if genarated `usage` folder is empty while `/var/lib/mysql-files/` contains generated csv files, you can move it manually as `root` or with `sudo` typing:
+```
+   `mv /var/lib/mysql-files/*.csv usage/`
+```
